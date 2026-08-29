@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="theme-color" content="#f5f6f8">
+<title>FocusFlow</title>
+<style>
+:root{--bg:#f5f6f8;--card:#fff;--text:#17181b;--muted:#70747c;--line:#dddfe4;--green:#16834b;--greenbg:#e8f7ef}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{margin:0;background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","Segoe UI",sans-serif}
+main{max-width:760px;margin:auto;padding:16px 14px 40px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:17px;margin-bottom:13px}
+h1,h2,h3,p{margin:0}.muted{color:var(--muted)}.small{font-size:13px}
+button,input,textarea{font:inherit}button,input,textarea{border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--text)}
+button{min-height:48px;padding:10px 14px;font-weight:600}button:active{transform:scale(.985)}
+.primary{background:#17181b;color:#fff;border-color:#17181b}.row{display:flex;gap:9px;flex-wrap:wrap}.grow{flex:1;min-width:130px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.ring{width:min(285px,78vw);aspect-ratio:1;border-radius:50%;margin:17px auto;display:grid;place-items:center;background:conic-gradient(#17181b var(--deg),#e1e2e6 var(--deg));position:relative}
+.ring:after{content:"";position:absolute;inset:11px;border-radius:50%;background:#fff}.inner{position:relative;z-index:2;text-align:center}
+.time{font-size:54px;font-weight:750;letter-spacing:-2px;font-variant-numeric:tabular-nums}.phase{font-size:19px;font-weight:700;margin-top:7px}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;color:var(--muted)}input{padding:11px;font-size:17px}
+.reasonGrid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:12px}.reason{position:relative;text-align:left;padding-right:38px}
+.reason.selected{border:2px solid var(--green);background:var(--greenbg);color:#11663b}
+.reason.selected:after{content:"✓";position:absolute;right:12px;top:50%;transform:translateY(-50%);font-size:22px;color:var(--green)}
+.probox{margin-top:12px;background:#f8f8fa;border:1px solid var(--line);border-radius:16px;padding:13px}.protime{font-size:36px;font-weight:750;font-variant-numeric:tabular-nums}
+.stat{text-align:center;background:#f8f8fa;border-radius:14px;padding:10px 5px}.stat b{display:block;font-size:21px}.stat span{font-size:12px;color:var(--muted)}
+.period.active{background:#17181b;color:#fff;border-color:#17181b}.item{display:flex;justify-content:space-between;gap:10px;padding:10px 0;border-bottom:1px solid var(--line)}
+textarea{width:100%;padding:12px;resize:vertical}.notice{background:#fff8df;border:1px solid #eadb99;border-radius:14px;padding:11px;font-size:13px;margin-bottom:13px}
+@media(max-width:430px){main{padding:12px 10px 30px}.card{padding:14px}.time{font-size:47px}.ring{width:min(260px,76vw)}}
+</style>
+</head>
+<body>
+<main id="app">
+<div class="notice"><b>FocusFlow – Safari-Version</b><br>Die App arbeitet ohne externe Bibliotheken. Timer verwenden Zeitstempel, damit beim Wechseln aus Safari zurück zur App die echte verstrichene Zeit berücksichtigt wird. Daten werden nur in diesem Browser gespeichert.</div>
+
+<section class="card">
+<div class="small muted">FOKUS-TIMER</div>
+<div class="ring" id="ring" style="--deg:0deg"><div class="inner"><div id="time" class="time">25:00</div><div id="phase" class="phase">Fokus</div><div id="state" class="small muted">Bereit</div></div></div>
+<div class="row" style="justify-content:center"><button id="start" class="primary">▶ Start</button><button id="reset">↺ Reset</button><button id="skip">⏭ Überspringen</button></div>
+</section>
+
+<section class="card">
+<h2 style="font-size:18px">⚙️ Deine Zeiten</h2>
+<p class="small muted" style="margin:4px 0 12px">Keine vorgeschriebenen Pomodoro-Zeiten.</p>
+<div class="grid2">
+<label>Fokus (Minuten)<input id="focus" type="number" min="1" max="240" value="25" inputmode="numeric"></label>
+<label>Pause (Minuten)<input id="break" type="number" min="1" max="180" value="5" inputmode="numeric"></label>
+</div>
+<button id="apply" style="width:100%;margin-top:10px">Zeiten übernehmen</button>
+<div id="settingMsg" class="small muted" style="margin-top:7px"></div>
+</section>
+
+<section class="card">
+<h2 style="font-size:18px">🛑 Prokrastination</h2>
+<p class="small muted" style="margin-top:4px">Grund auswählen → „Start“ drücken → die echte Dauer wird automatisch gemessen.</p>
+<div class="reasonGrid">
+<button class="reason" data-r="Social Media">📱 Social Media</button>
+<button class="reason" data-r="YouTube">▶️ YouTube</button>
+<button class="reason" data-r="Internet / Google">🌐 Internet / Google</button>
+<button class="reason" data-r="Gedanken / Tagträumen">🧠 Gedanken / Tagträumen</button>
+<button class="reason" data-r="Müdigkeit">😴 Müdigkeit</button>
+<button class="reason" data-r="Langeweile">😐 Langeweile</button>
+<button class="reason" data-r="Aufgabe zu schwierig">😰 Aufgabe zu schwierig</button>
+<button class="reason" data-r="Keine Ahnung">🤷 Keine Ahnung</button>
+</div>
+<div class="probox">
+<div id="proLabel" class="small muted">Kein Grund ausgewählt</div>
+<div id="proTime" class="protime">00:00</div>
+<div class="row"><button id="proStart" class="primary grow">▶ Prokrastination starten</button><button id="proCancel" class="grow" style="display:none">Abbrechen</button></div>
+<div id="proMsg" class="small muted" style="margin-top:7px"></div>
+</div>
+</section>
+
+<section class="card">
+<h2 style="font-size:18px">📊 Statistik</h2>
+<div class="grid3" style="margin-top:11px">
+<div class="stat"><b id="todayFocus">0 min</b><span>Fokus heute</span></div>
+<div class="stat"><b id="todayPro">0 min</b><span>Prokrastination</span></div>
+<div class="stat"><b id="todayCount">0</b><span>Ablenkungen</span></div>
+</div>
+<div class="row" style="margin-top:11px">
+<button class="period active" data-p="day">Heute</button><button class="period" data-p="week">7 Tage</button><button class="period" data-p="month">30 Tage</button>
+</div>
+<div id="summary" class="small" style="margin-top:12px"></div>
+<div id="reasons" style="margin-top:8px"></div>
+</section>
+
+<section class="card">
+<h2 style="font-size:18px">🧠 Gedanken-Parkplatz</h2>
+<p class="small muted" style="margin:4px 0 9px">Gedanke speichern statt ihn sofort zu verfolgen.</p>
+<textarea id="thought" rows="3" placeholder="Was willst du später nachschauen?"></textarea>
+<button id="park" style="width:100%;margin-top:8px">Gedanken parken</button>
+<div id="thoughts" style="margin-top:8px"></div>
+</section>
+</main>
+
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var STORE="focusflow_safari_v4";
+var db={days:{}};
+try{db=JSON.parse(localStorage.getItem(STORE)||'{"days":{}}')}catch(e){}
+if(!db.days)db.days={};
+
+function key(d){d=d||new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")}
+function blank(){return{focus:0,pro:0,count:0,reasons:{},logs:[],thoughts:[]}}
+function getDay(k){if(!db.days[k])db.days[k]=blank();return db.days[k]}
+function save(){try{localStorage.setItem(STORE,JSON.stringify(db))}catch(e){}}
+function pad(n){return String(n).padStart(2,"0")}
+function clock(s){s=Math.max(0,Math.ceil(Number(s)||0));return pad(Math.floor(s/60))+":"+pad(s%60)}
+function clock2(s){s=Math.max(0,Math.floor(Number(s)||0));return pad(Math.floor(s/60))+":"+pad(s%60)}
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"})[c]})}
+
+var today=getDay(key());
+var focusSec=25*60,breakSec=5*60,phase="Fokus",remaining=focusSec,total=focusSec;
+var pom=false,pomStamp=0,pomBase=remaining,pomTickId=null;
+var selected="",pro=false,proStamp=0,proTickId=null,period="day";
+
+function renderPom(){
+ $("time").textContent=clock(remaining);$("phase").textContent=phase;$("state").textContent=pom?"Läuft":"Bereit";
+ $("ring").style.setProperty("--deg",Math.max(0,Math.min(360,360*(1-remaining/Math.max(1,total))))+"deg");
+ $("start").textContent=pom?"⏸ Pause":"▶ Start";
+}
+function syncPom(){
+ if(!pom)return;
+ var elapsed=(Date.now()-pomStamp)/1000,r=pomBase-elapsed;
+ while(r<=0){phase=phase==="Fokus"?"Pause":"Fokus";total=phase==="Fokus"?focusSec:breakSec;r+=total;if(navigator.vibrate)try{navigator.vibrate([120,70,120])}catch(e){}}
+ remaining=r;
+}
+function startPom(){if(pom)return;pom=true;pomStamp=Date.now();pomBase=remaining;clearInterval(pomTickId);pomTickId=setInterval(function(){syncPom();renderPom()},250);renderPom()}
+function pausePom(){
+ if(!pom)return;
+ syncPom();
+ var elapsed=Math.max(0,(Date.now()-pomStamp)/1000);
+ if(phase==="Fokus")today.focus+=Math.min(elapsed,pomBase);
+ pom=false;clearInterval(pomTickId);pomTickId=null;save();renderPom();renderStats();
+}
+$("start").onclick=function(){pom?pausePom():startPom()}
+$("reset").onclick=function(){pausePom();phase="Fokus";total=focusSec;remaining=focusSec;renderPom()}
+$("skip").onclick=function(){pausePom();phase=phase==="Fokus"?"Pause":"Fokus";total=phase==="Fokus"?focusSec:breakSec;remaining=total;renderPom()}
+$("apply").onclick=function(){
+ var f=Number($("focus").value),b=Number($("break").value);
+ if(!Number.isFinite(f)||f<1||f>240||!Number.isFinite(b)||b<1||b>180){$("settingMsg").textContent="Fokus: 1–240 min, Pause: 1–180 min.";return}
+ pausePom();focusSec=f*60;breakSec=b*60;phase="Fokus";total=focusSec;remaining=focusSec;
+ $("settingMsg").textContent="Übernommen: "+f+" min Fokus / "+b+" min Pause.";renderPom()
+}
+
+document.querySelectorAll(".reason").forEach(function(btn){btn.onclick=function(){
+ if(pro)return;
+ selected=btn.getAttribute("data-r");
+ document.querySelectorAll(".reason").forEach(function(b){b.classList.remove("selected")});
+ btn.classList.add("selected");$("proLabel").textContent="Ausgewählt: "+selected;$("proMsg").textContent="Jetzt Prokrastination starten."
+}})
+function updatePro(){if(pro)$("proTime").textContent=clock2((Date.now()-proStamp)/1000)}
+function startPro(){
+ if(!selected||pro)return;
+ pro=true;proStamp=Date.now();$("proLabel").textContent="Läuft: "+selected;$("proStart").textContent="⏹ Prokrastination beenden";$("proCancel").style.display="block";$("proMsg").textContent="Die echte Dauer wird erfasst.";
+ clearInterval(proTickId);proTickId=setInterval(updatePro,250);updatePro()
+}
+function finishPro(){
+ if(!pro)return;
+ var mins=Math.max(1,Math.ceil((Date.now()-proStamp)/60000)),r=selected;
+ today=getDay(key());today.pro+=mins;today.count++;today.reasons[r]=(today.reasons[r]||0)+1;today.logs.push({reason:r,min:mins,at:Date.now()});
+ pro=false;clearInterval(proTickId);proTickId=null;selected="";
+ document.querySelectorAll(".reason").forEach(function(b){b.classList.remove("selected")});
+ $("proTime").textContent="00:00";$("proLabel").textContent="Kein Grund ausgewählt";$("proStart").textContent="▶ Prokrastination starten";$("proCancel").style.display="none";$("proMsg").textContent="Gespeichert: "+mins+" min – "+r;
+ save();renderStats()
+}
+$("proStart").onclick=function(){pro?finishPro():startPro()}
+$("proCancel").onclick=function(){pro=false;clearInterval(proTickId);proTickId=null;selected="";document.querySelectorAll(".reason").forEach(function(b){b.classList.remove("selected")});$("proTime").textContent="00:00";$("proLabel").textContent="Kein Grund ausgewählt";$("proStart").textContent="▶ Prokrastination starten";$("proCancel").style.display="none";$("proMsg").textContent="Nicht gespeichert."}
+
+function keys(p){
+ var n=p==="week"?7:p==="month"?30:1,a=[];
+ for(var i=n-1;i>=0;i--){var d=new Date();d.setHours(12,0,0,0);d.setDate(d.getDate()-i);a.push(key(d))}
+ return a
+}
+function agg(p){
+ var a={focus:0,pro:0,count:0,reasons:{}};
+ keys(p).forEach(function(k){var x=getDay(k);a.focus+=Number(x.focus)||0;a.pro+=Number(x.pro)||0;a.count+=Number(x.count)||0;Object.keys(x.reasons||{}).forEach(function(r){a.reasons[r]=(a.reasons[r]||0)+x.reasons[r]})});
+ return a
+}
+function renderStats(){
+ today=getDay(key());
+ $("todayFocus").textContent=Math.floor(today.focus/60)+" min";$("todayPro").textContent=today.pro+" min";$("todayCount").textContent=today.count;
+ var a=agg(period),rows=Object.keys(a.reasons).map(function(r){return[r,a.reasons[r]]}).sort(function(x,y){return y[1]-x[1]});
+ $("summary").innerHTML="<b>"+Math.floor(a.focus/60)+" min</b> Fokus · <b>"+a.pro+" min</b> Prokrastination · <b>"+a.count+"</b> Ablenkungen";
+ $("reasons").innerHTML=rows.length?'<div class="small muted"><b>Wofür wurde prokrastiniert?</b></div>'+rows.map(function(x){return'<div class="item"><span>'+esc(x[0])+'</span><b>'+x[1]+'×</b></div>'}).join(""):'<div class="small muted">Noch keine Daten.</div>'
+}
+document.querySelectorAll(".period").forEach(function(b){b.onclick=function(){period=b.getAttribute("data-p");document.querySelectorAll(".period").forEach(function(x){x.classList.remove("active")});b.classList.add("active");renderStats()}})
+$("park").onclick=function(){var v=$("thought").value.trim();if(!v)return;today=getDay(key());today.thoughts.push(v);$("thought").value="";save();renderThoughts()}
+function renderThoughts(){var a=getDay(key()).thoughts||[];$("thoughts").innerHTML=a.slice().reverse().map(function(x){return'<div class="item"><span>'+esc(x)+'</span></div>'}).join("")}
+document.addEventListener("visibilitychange",function(){if(document.visibilityState==="visible"){if(pom){syncPom();renderPom()}if(pro)updatePro()}});
+window.addEventListener("beforeunload",function(){save()});
+save();renderPom();renderStats();renderThoughts();
+})();
+</script>
+</body>
+</html>
